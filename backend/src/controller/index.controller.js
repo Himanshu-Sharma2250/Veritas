@@ -5,9 +5,22 @@ import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+import {registerUserSchema, loginUserSchema} from "../validator/auth.validator.js"
+import { string } from "zod";
+
 export const registerUser = async (req, res) => {
     // get the username, email, password
-    const {username, email, password} = req.body;
+    const {data, error} = registerUserSchema.safeParse(req.body);
+
+    if (error) {
+        console.error("Error - ", error);
+        return res.status(400).json({
+            success: false,
+            message: "Error occured"
+        })
+    }
+
+    const {username, email, password} = data;
     // check if they present
     if (!username || !email || !password) {
         return res.status(400).json({
@@ -15,10 +28,10 @@ export const registerUser = async (req, res) => {
             message: "All fields are required"
         })
     }
-
-    if (typeof(password) !== String) {
+    
+    if (typeof(password) !== "string") {
         console.log("The password must be of type string");
-        password = password.toString();
+        password = String(password);
     }
 
     try {
@@ -111,7 +124,16 @@ export const loginUser = async (req, res) => {
         console.log("body doesnot exist");
     }
 
-    const { email, password } = req.body;
+    const {data, error} = loginUserSchema.safeParse(req.body);
+
+    if (error) {
+        console.error("Error - ", error);
+        return res.status(400).json({
+            message: "Error occured parsing"
+        })
+    }
+
+    const { email, password } = data;
 
     if (!email || !password) {
         return res.status(401).json({
