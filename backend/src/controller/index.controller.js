@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import {registerUserSchema, loginUserSchema} from "../validator/auth.validator.js"
-import { string } from "zod";
+import { mailGenerator, resetPasswordEmail, verifyEmail } from "../utils/mail.js";
 
 export const registerUser = async (req, res) => {
     // get the username, email, password
@@ -56,6 +56,19 @@ export const registerUser = async (req, res) => {
 
         await user.save();
 
+        // generating the email body to send
+        const verifyEmailOption = {
+            name: username,
+            subject: "Click on the button below to verify email:",
+            link: `${process.env.BASE_URL}/api/v1/user/verify/${token}`
+        }
+
+        const verifyEmailBody = verifyEmail(verifyEmailOption);
+
+        // Generate an HTML and text email with the provided contents
+        const htmlEmailBody = mailGenerator.generate(verifyEmailBody);
+        const textEmailBody = mailGenerator.generatePlaintext(verifyEmailBody);
+
         // create a transporter to send the email
         const transporter = nodemailer.createTransport({
             host: process.env.MAILTRAP_HOST,
@@ -71,9 +84,8 @@ export const registerUser = async (req, res) => {
             from: process.env.MAILTRAP_SENDER,
             to: user.email,
             subject: "To verify your email",
-            text: `Click on this URL : ${process.env.BASE_URL}/api/v1/user/verify/${token}`, // plain‑text body
-            html: `<h2>Click on this URL</h2>
-                    <a href=${process.env.BASE_URL}/api/v1/user/verify/${token}}>Click here</a>`, // HTML body
+            text: textEmailBody, // plain‑text body
+            html: htmlEmailBody, // HTML body
         }
 
         await transporter.sendMail(mailOptions);
@@ -282,6 +294,19 @@ export const forgotPassword = async (req, res) => {
 
         await user.save();
 
+        // generating the email body to send
+        const resetPasswordOption = {
+            name: user.username,
+            subject: "Click on the button below to reset your password:",
+            link: `${process.env.BASE_URL}/api/v1/user/resetPassword/${token}`
+        }
+
+        const resetPasswordBody = resetPasswordEmail(resetPasswordOption);
+
+        // Generate an HTML and text email with the provided contents
+        const htmlEmailBody = mailGenerator.generate(resetPasswordBody);
+        const textEmailBody = mailGenerator.generatePlaintext(resetPasswordBody);
+
         // create a transporter to send the email
         const transporter = nodemailer.createTransport({
             host: process.env.MAILTRAP_HOST,
@@ -297,9 +322,8 @@ export const forgotPassword = async (req, res) => {
             from: process.env.MAILTRAP_SENDER,
             to: user.email,
             subject: "To reset your password",
-            text: `Click on this URL : ${process.env.BASE_URL}/api/v1/user/resetPassword/${token}`, // plain‑text body
-            html: `<h2>Click on this URL</h2>
-                    <a href=${process.env.BASE_URL}/api/v1/user/resetPassword/${token}}>Click here</a>`, // HTML body
+            text: textEmailBody, // plain‑text body
+            html: htmlEmailBody, // HTML body
         }
 
         await transporter.sendMail(mailOptions);
