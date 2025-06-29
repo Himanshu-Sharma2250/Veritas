@@ -5,7 +5,7 @@ import { auth } from "../middleware/index.middleware.js";
 const router = express.Router();
 
 router.post("/register", registerUser);
-router.get("/verify/:token", verifyUser);
+router.post("/verify/:token", verifyUser);
 router.post("/login", loginUser);
 router.get("/profile", auth, profile);
 router.get("/logout", auth, logoutUser);
